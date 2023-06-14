@@ -2,6 +2,7 @@ use std::ffi::CStr;
 
 use crate::NativeFormats;
 
+/// A unique identifier for a device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DeviceID(pub u32);
 
