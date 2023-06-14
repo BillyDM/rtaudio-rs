@@ -1,6 +1,6 @@
 [package]
 name = "rtaudio"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Billy Messenger <BillyDM@tutamail.com>"]
 description = "Safe Rust wrapper and bindings for RtAudio"
@@ -25,6 +25,6 @@ wasapi = ["rtaudio-sys/wasapi"]
 ds = ["rtaudio-sys/ds"]
 
 [dependencies]
-rtaudio-sys = { version = "0.1", default-features = false }
+rtaudio-sys = { version = "0.2", default-features = false }
 bitflags = "2.3"
 lazy_static = "1.4"

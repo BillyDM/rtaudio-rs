@@ -1,5 +1,5 @@
 use crate::error::{RtAudioError, RtAudioErrorType};
-use crate::{Api, DeviceInfo, DeviceParams, SampleFormat, Stream, StreamOptions};
+use crate::{Api, DeviceID, DeviceInfo, DeviceParams, SampleFormat, Stream, StreamOptions};
 
 /// An RtAudio Host instance. This is used to enumerate audio devices before
 /// opening a stream.
@@ -63,22 +63,23 @@ impl Host {
         // Safe because `self.raw` is gauranteed to not be null.
         let id = unsafe { rtaudio_sys::rtaudio_get_device_id(self.raw, index as i32) };
 
-        crate::check_for_error(self.raw)?;
-
-        if id < 0 {
+        if id == 0 {
             return Err(RtAudioError {
                 type_: RtAudioErrorType::InvalidDevice,
                 msg: None,
             });
         }
 
-        self.get_device_info_by_id(id as u32)
+        crate::check_for_error(self.raw)?;
+
+        self.get_device_info_by_id(DeviceID(id as u32))
     }
 
     /// Retrieve info about an audio device by its ID.
-    pub fn get_device_info_by_id(&self, id: u32) -> Result<DeviceInfo, RtAudioError> {
+    pub fn get_device_info_by_id(&self, id: DeviceID) -> Result<DeviceInfo, RtAudioError> {
         // Safe because `self.raw` is gauranteed to not be null.
-        let device_info_raw = unsafe { rtaudio_sys::rtaudio_get_device_info(self.raw, id as i32) };
+        let device_info_raw =
+            unsafe { rtaudio_sys::rtaudio_get_device_info(self.raw, id.0 as i32) };
 
         crate::check_for_error(self.raw)?;
 
@@ -96,27 +97,51 @@ impl Host {
     }
 
     /// Returns the device ID (not index) of the default output device.
-    pub fn default_output_device_id(&self) -> u32 {
+    pub fn default_output_device_id(&self) -> Option<DeviceID> {
         // Safe because `self.raw` is gauranteed to not be null.
-        unsafe { rtaudio_sys::rtaudio_get_default_output_device(self.raw) }
+        let res = unsafe { rtaudio_sys::rtaudio_get_default_output_device(self.raw) };
+
+        if res == 0 {
+            None
+        } else {
+            Some(DeviceID(res as u32))
+        }
     }
 
     /// Returns the device ID (not index) of the default input device.
-    pub fn default_input_device_id(&self) -> u32 {
+    pub fn default_input_device_id(&self) -> Option<DeviceID> {
         // Safe because `self.raw` is gauranteed to not be null.
-        unsafe { rtaudio_sys::rtaudio_get_default_input_device(self.raw) }
+        let res = unsafe { rtaudio_sys::rtaudio_get_default_input_device(self.raw) };
+
+        if res == 0 {
+            None
+        } else {
+            Some(DeviceID(res as u32))
+        }
     }
 
     /// Returns information about the default output device.
     pub fn default_output_device(&self) -> Result<DeviceInfo, RtAudioError> {
-        let id = self.default_output_device_id();
-        self.get_device_info_by_id(id)
+        if let Some(id) = self.default_output_device_id() {
+            self.get_device_info_by_id(id)
+        } else {
+            Err(RtAudioError {
+                type_: RtAudioErrorType::NoDevicesFound,
+                msg: None,
+            })
+        }
     }
 
     /// Returns information about the default input device.
     pub fn default_input_device(&self) -> Result<DeviceInfo, RtAudioError> {
-        let id = self.default_input_device_id();
-        self.get_device_info_by_id(id)
+        if let Some(id) = self.default_input_device_id() {
+            self.get_device_info_by_id(id)
+        } else {
+            Err(RtAudioError {
+                type_: RtAudioErrorType::NoDevicesFound,
+                msg: None,
+            })
+        }
     }
 
     /// Open a new audio stream.

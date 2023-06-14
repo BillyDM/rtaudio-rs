@@ -1,16 +1,16 @@
 use rtaudio_sys::MAX_NAME_LENGTH;
 use std::ffi::CString;
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_int, c_uint};
 
 use crate::error::{RtAudioError, RtAudioErrorType};
-use crate::StreamFlags;
+use crate::{DeviceID, StreamFlags};
 
 /// Used for specifying the parameters of a device when opening a
 /// stream.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DeviceParams {
     /// The ID (not index) of the device to use.
-    pub device_id: u32,
+    pub device_id: DeviceID,
     /// The number of channels in the device to use.
     pub num_channels: u32,
     /// The first channel index on the device (default = 0) to use.
@@ -20,7 +20,7 @@ pub struct DeviceParams {
 impl Default for DeviceParams {
     fn default() -> Self {
         Self {
-            device_id: 0,
+            device_id: DeviceID(0),
             num_channels: 2,
             first_channel: 0,
         }
@@ -30,9 +30,9 @@ impl Default for DeviceParams {
 impl DeviceParams {
     pub fn to_raw(&self) -> rtaudio_sys::rtaudio_stream_parameters_t {
         rtaudio_sys::rtaudio_stream_parameters_t {
-            device_id: self.device_id,
-            num_channels: self.num_channels,
-            first_channel: self.first_channel,
+            device_id: self.device_id.0 as c_uint,
+            num_channels: self.num_channels as c_uint,
+            first_channel: self.first_channel as c_uint,
         }
     }
 }
@@ -69,17 +69,15 @@ pub struct StreamOptions {
 
 impl StreamOptions {
     pub fn to_raw(&self) -> Result<rtaudio_sys::rtaudio_stream_options_t, RtAudioError> {
-        let name = str_to_c_array::<{ MAX_NAME_LENGTH as usize }>(&self.name).map_err(|_| {
-            RtAudioError {
-                type_: RtAudioErrorType::InvalidParamter,
-                msg: Some("stream name is invalid".into()),
-            }
+        let name = str_to_c_array::<{ MAX_NAME_LENGTH }>(&self.name).map_err(|_| RtAudioError {
+            type_: RtAudioErrorType::InvalidParamter,
+            msg: Some("stream name is invalid".into()),
         })?;
 
         Ok(rtaudio_sys::rtaudio_stream_options_t {
             flags: self.flags.bits(),
-            num_buffers: self.num_buffers,
-            priority: self.priority,
+            num_buffers: self.num_buffers as c_uint,
+            priority: self.priority as c_int,
             name,
         })
     }

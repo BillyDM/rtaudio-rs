@@ -57,7 +57,7 @@ impl Stream {
         input_device: Option<DeviceParams>,
         sample_format: SampleFormat,
         sample_rate: u32,
-        mut buffer_frames: u32,
+        buffer_frames: u32,
         options: StreamOptions,
         error_callback: E,
     ) -> Result<Stream, (Host, RtAudioError)>
@@ -115,6 +115,8 @@ impl Stream {
             ERROR_CB_SINGLETON.lock().unwrap().cb = Some(Box::new(error_callback));
         }
 
+        let mut buffer_frames_res = buffer_frames as c_uint;
+
         // Safe because we have checked that `raw` is not null, we have
         // constructed the `output_params` and `input_params` pointers
         // correctly, and we have pinned the `cb_context_ptr` pointer
@@ -126,8 +128,8 @@ impl Stream {
                 output_device_ptr,
                 input_device_ptr,
                 sample_format.to_raw(),
-                sample_rate,
-                &mut buffer_frames,
+                sample_rate as c_uint,
+                &mut buffer_frames_res,
                 Some(crate::stream::raw_data_callback),
                 cb_context_ptr as *mut c_void,
                 &mut raw_options,
@@ -146,7 +148,7 @@ impl Stream {
         }
 
         // Get info about the stream.
-        info.max_frames = buffer_frames as usize;
+        info.max_frames = buffer_frames_res as usize;
         // Safe because we have checked that `raw` is not null.
         unsafe {
             let latency = rtaudio_sys::rtaudio_get_stream_latency(raw);
@@ -169,7 +171,7 @@ impl Stream {
         unsafe {
             let sr = rtaudio_sys::rtaudio_get_stream_sample_rate(raw);
             if sr > 0 {
-                info.sample_rate = sr;
+                info.sample_rate = sr as u32;
             }
         };
         if let Err(e) = crate::check_for_error(raw) {

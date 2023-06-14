@@ -9,66 +9,50 @@ pub struct RtAudioError {
     pub msg: Option<String>,
 }
 
-#[repr(u32)]
+#[repr(i32)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RtAudioErrorType {
     /// A non-critical error.
-    Warning = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_WARNING as u32,
+    Warning = rtaudio_sys::RTAUDIO_ERROR_WARNING as i32,
     /// An unspecified error type.
-    Unkown = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_UNKNOWN as u32,
+    Unkown = rtaudio_sys::RTAUDIO_ERROR_UNKNOWN as i32,
     /// No devices found on system.
-    NoDevicesFound = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_NO_DEVICES_FOUND as u32,
+    NoDevicesFound = rtaudio_sys::RTAUDIO_ERROR_NO_DEVICES_FOUND as i32,
     /// An invalid device ID was specified.
-    InvalidDevice = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_DEVICE as u32,
+    InvalidDevice = rtaudio_sys::RTAUDIO_ERROR_INVALID_DEVICE as i32,
     /// A device in use was disconnected.
-    DeviceDisconnect = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_DEVICE_DISCONNECT as u32,
+    DeviceDisconnect = rtaudio_sys::RTAUDIO_ERROR_DEVICE_DISCONNECT as i32,
     /// An error occurred during memory allocation.
-    MemoryError = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_MEMORY_ERROR as u32,
+    MemoryError = rtaudio_sys::RTAUDIO_ERROR_MEMORY_ERROR as i32,
     /// An invalid parameter was specified to a function.
-    InvalidParamter = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_PARAMETER as u32,
+    InvalidParamter = rtaudio_sys::RTAUDIO_ERROR_INVALID_PARAMETER as i32,
     /// The function was called incorrectly.
-    InvalidUse = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_USE as u32,
+    InvalidUse = rtaudio_sys::RTAUDIO_ERROR_INVALID_USE as i32,
     /// A system driver error occurred.
-    DriverError = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_DRIVER_ERROR as u32,
+    DriverError = rtaudio_sys::RTAUDIO_ERROR_DRIVER_ERROR as i32,
     /// A system error occurred.
-    SystemError = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_SYSTEM_ERROR as u32,
+    SystemError = rtaudio_sys::RTAUDIO_ERROR_SYSTEM_ERROR as i32,
     /// A thread error occurred.
-    ThreadError = rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_THREAD_ERROR as u32,
+    ThreadError = rtaudio_sys::RTAUDIO_ERROR_THREAD_ERROR as i32,
 }
 
 impl RtAudioErrorType {
     pub fn from_raw(e: rtaudio_sys::rtaudio_error_t) -> Option<RtAudioErrorType> {
         match e {
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_NONE => None,
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_WARNING => Some(RtAudioErrorType::Warning),
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_UNKNOWN => Some(RtAudioErrorType::Unkown),
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_NO_DEVICES_FOUND => {
-                Some(RtAudioErrorType::NoDevicesFound)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_DEVICE => {
-                Some(RtAudioErrorType::InvalidDevice)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_DEVICE_DISCONNECT => {
+            rtaudio_sys::RTAUDIO_ERROR_NONE => None,
+            rtaudio_sys::RTAUDIO_ERROR_WARNING => Some(RtAudioErrorType::Warning),
+            rtaudio_sys::RTAUDIO_ERROR_UNKNOWN => Some(RtAudioErrorType::Unkown),
+            rtaudio_sys::RTAUDIO_ERROR_NO_DEVICES_FOUND => Some(RtAudioErrorType::NoDevicesFound),
+            rtaudio_sys::RTAUDIO_ERROR_INVALID_DEVICE => Some(RtAudioErrorType::InvalidDevice),
+            rtaudio_sys::RTAUDIO_ERROR_DEVICE_DISCONNECT => {
                 Some(RtAudioErrorType::DeviceDisconnect)
             }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_MEMORY_ERROR => {
-                Some(RtAudioErrorType::MemoryError)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_PARAMETER => {
-                Some(RtAudioErrorType::InvalidParamter)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_INVALID_USE => {
-                Some(RtAudioErrorType::InvalidUse)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_DRIVER_ERROR => {
-                Some(RtAudioErrorType::DriverError)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_SYSTEM_ERROR => {
-                Some(RtAudioErrorType::SystemError)
-            }
-            rtaudio_sys::rtaudio_error_RTAUDIO_ERROR_THREAD_ERROR => {
-                Some(RtAudioErrorType::ThreadError)
-            }
+            rtaudio_sys::RTAUDIO_ERROR_MEMORY_ERROR => Some(RtAudioErrorType::MemoryError),
+            rtaudio_sys::RTAUDIO_ERROR_INVALID_PARAMETER => Some(RtAudioErrorType::InvalidParamter),
+            rtaudio_sys::RTAUDIO_ERROR_INVALID_USE => Some(RtAudioErrorType::InvalidUse),
+            rtaudio_sys::RTAUDIO_ERROR_DRIVER_ERROR => Some(RtAudioErrorType::DriverError),
+            rtaudio_sys::RTAUDIO_ERROR_SYSTEM_ERROR => Some(RtAudioErrorType::SystemError),
+            rtaudio_sys::RTAUDIO_ERROR_THREAD_ERROR => Some(RtAudioErrorType::ThreadError),
             _ => Some(RtAudioErrorType::Unkown),
         }
     }

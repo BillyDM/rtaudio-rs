@@ -2,11 +2,14 @@ use std::ffi::CStr;
 
 use crate::NativeFormats;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DeviceID(pub u32);
+
 /// Queried information about a device.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceInfo {
     /// The unique identifier of this device.
-    pub id: u32,
+    pub id: DeviceID,
     /// The number of output channels on this device.
     pub output_channels: u32,
     /// The number of input channels on this device.
@@ -57,14 +60,14 @@ impl DeviceInfo {
         };
 
         Self {
-            id: d.id,
-            output_channels: d.output_channels,
-            input_channels: d.input_channels,
-            duplex_channels: d.duplex_channels,
+            id: DeviceID(d.id as u32),
+            output_channels: d.output_channels as u32,
+            input_channels: d.input_channels as u32,
+            duplex_channels: d.duplex_channels as u32,
             is_default_output: d.is_default_output != 0,
             is_default_input: d.is_default_input != 0,
-            native_formats: NativeFormats::from_bits_truncate(d.native_formats as u64),
-            preferred_sample_rate: d.preferred_sample_rate,
+            native_formats: NativeFormats::from_bits_truncate(d.native_formats),
+            preferred_sample_rate: d.preferred_sample_rate as u32,
             sample_rates,
             name,
         }
