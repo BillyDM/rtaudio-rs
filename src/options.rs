@@ -71,7 +71,7 @@ impl StreamOptions {
     pub fn to_raw(&self) -> Result<rtaudio_sys::rtaudio_stream_options_t, RtAudioError> {
         let name = str_to_c_array::<{ MAX_NAME_LENGTH }>(&self.name).map_err(|_| RtAudioError {
             type_: RtAudioErrorType::InvalidParamter,
-            msg: Some("stream name is invalid".into()),
+            msg: Some("Stream name is invalid".into()),
         })?;
 
         Ok(rtaudio_sys::rtaudio_stream_options_t {

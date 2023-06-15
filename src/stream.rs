@@ -250,8 +250,7 @@ impl Stream {
             // Safe because `self.raw` cannot be null.
             unsafe { rtaudio_sys::rtaudio_stop_stream(self.raw) };
             if let Err(e) = crate::check_for_error(self.raw) {
-                // TODO: Use log crate.
-                eprintln!("{}", e);
+                log::error!("Error while stopping RtAudio stream: {}", e);
             }
 
             // TODO: Make sure that the stream is always properly stopped
@@ -276,8 +275,7 @@ impl Stream {
         // Safe because `self.raw` cannot be null.
         unsafe { rtaudio_sys::rtaudio_close_stream(self.raw) };
         if let Err(e) = crate::check_for_error(self.raw) {
-            // TODO: use the log crate.
-            eprintln!("{}", e);
+            log::error!("Error while closing RtAudio stream: {}", e);
         }
 
         let host = Host { raw: self.raw };
@@ -304,8 +302,7 @@ impl Drop for Stream {
         // Safe because we checked that `self.raw` is not null.
         unsafe { rtaudio_sys::rtaudio_close_stream(self.raw) };
         if let Err(e) = crate::check_for_error(self.raw) {
-            // TODO: Use log crate.
-            eprintln!("{}", e);
+            log::error!("Error while closing RtAudio stream: {}", e);
         }
 
         // Safe because we checked that `self.raw` is not null, and

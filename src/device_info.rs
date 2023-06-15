@@ -54,10 +54,13 @@ impl DeviceInfo {
         let name_slice: &[u8] =
             unsafe { std::slice::from_raw_parts(d.name.as_ptr() as *const u8, d.name.len()) };
 
-        let name = if let Ok(name) = CStr::from_bytes_until_nul(&name_slice) {
-            name.to_string_lossy().to_string()
-        } else {
-            String::from("error")
+        let name = match CStr::from_bytes_until_nul(&name_slice) {
+            Ok(n) => n.to_string_lossy().to_string(),
+            Err(e) => {
+                log::error!("RtAudio: Failed to parse audio device name: {}", e);
+
+                String::from("error")
+            }
         };
 
         Self {

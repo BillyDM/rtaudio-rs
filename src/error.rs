@@ -124,8 +124,8 @@ pub(crate) fn check_for_error(raw: rtaudio_sys::rtaudio_t) -> Result<(), RtAudio
         let e = RtAudioError { type_, msg };
 
         if let RtAudioErrorType::Warning = e.type_ {
-            // TODO: use the log crate.
-            println!("{}", e);
+            log::warn!("{}", e);
+
             Ok(())
         } else {
             Err(e)

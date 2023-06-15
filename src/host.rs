@@ -1,5 +1,6 @@
 use crate::error::{RtAudioError, RtAudioErrorType};
 use crate::{Api, DeviceID, DeviceInfo, DeviceParams, SampleFormat, Stream, StreamOptions};
+use std::os::raw::{c_int, c_uint};
 
 /// An RtAudio Host instance. This is used to enumerate audio devices before
 /// opening a stream.
@@ -36,7 +37,7 @@ impl Host {
     ///
     /// By default this is set to `false`.
     pub fn show_warnings(&self, show: bool) {
-        let show_int: i32 = if show { 1 } else { 0 };
+        let show_int: c_int = if show { 1 } else { 0 };
 
         unsafe {
             rtaudio_sys::rtaudio_show_warnings(self.raw, show_int);
@@ -61,12 +62,12 @@ impl Host {
     /// Retrieve information about an audio device by its index.
     pub fn get_device_info_by_index(&self, index: usize) -> Result<DeviceInfo, RtAudioError> {
         // Safe because `self.raw` is gauranteed to not be null.
-        let id = unsafe { rtaudio_sys::rtaudio_get_device_id(self.raw, index as i32) };
+        let id = unsafe { rtaudio_sys::rtaudio_get_device_id(self.raw, index as c_int) };
 
         if id == 0 {
             return Err(RtAudioError {
-                type_: RtAudioErrorType::InvalidDevice,
-                msg: None,
+                type_: RtAudioErrorType::InvalidParamter,
+                msg: Some(format!("Could not find device at index {}", index)),
             });
         }
 
@@ -79,7 +80,7 @@ impl Host {
     pub fn get_device_info_by_id(&self, id: DeviceID) -> Result<DeviceInfo, RtAudioError> {
         // Safe because `self.raw` is gauranteed to not be null.
         let device_info_raw =
-            unsafe { rtaudio_sys::rtaudio_get_device_info(self.raw, id.0 as i32) };
+            unsafe { rtaudio_sys::rtaudio_get_device_info(self.raw, id.0 as c_uint) };
 
         crate::check_for_error(self.raw)?;
 
@@ -94,6 +95,80 @@ impl Host {
             num_devices,
             instance: self,
         }
+    }
+
+    /// Retrieve a list of available audio devices.
+    pub fn devices(&self) -> Vec<DeviceInfo> {
+        self.iter_devices()
+            .filter_map(|d| match d {
+                Ok(d) => Some(d),
+                Err(e) => {
+                    log::warn!("{}", e);
+
+                    None
+                }
+            })
+            .collect()
+    }
+
+    /// Retrieve a list of available output audio devices.
+    pub fn output_devices(&self) -> Vec<DeviceInfo> {
+        self.iter_devices()
+            .filter_map(|d| match d {
+                Ok(d) => {
+                    if d.output_channels > 0 {
+                        Some(d)
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => {
+                    log::warn!("{}", e);
+
+                    None
+                }
+            })
+            .collect()
+    }
+
+    /// Retrieve a list of available input audio devices.
+    pub fn input_devices(&self) -> Vec<DeviceInfo> {
+        self.iter_devices()
+            .filter_map(|d| match d {
+                Ok(d) => {
+                    if d.input_channels > 0 {
+                        Some(d)
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => {
+                    log::warn!("{}", e);
+
+                    None
+                }
+            })
+            .collect()
+    }
+
+    /// Retrieve a list of available duplex audio devices.
+    pub fn duplex_devices(&self) -> Vec<DeviceInfo> {
+        self.iter_devices()
+            .filter_map(|d| match d {
+                Ok(d) => {
+                    if d.duplex_channels > 0 {
+                        Some(d)
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => {
+                    log::warn!("{}", e);
+
+                    None
+                }
+            })
+            .collect()
     }
 
     /// Returns the device ID (not index) of the default output device.
@@ -127,7 +202,7 @@ impl Host {
         } else {
             Err(RtAudioError {
                 type_: RtAudioErrorType::NoDevicesFound,
-                msg: None,
+                msg: Some("No default output device found".into()),
             })
         }
     }
@@ -139,7 +214,7 @@ impl Host {
         } else {
             Err(RtAudioError {
                 type_: RtAudioErrorType::NoDevicesFound,
-                msg: None,
+                msg: Some("No default input device found".into()),
             })
         }
     }
