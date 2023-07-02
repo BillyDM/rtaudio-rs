@@ -36,13 +36,13 @@ pub struct StreamInfo {
     pub stream_time: f64,
 }
 
-/// An opened RtAudio stream.
+/// A handle to an opened RtAudio stream.
 ///
 /// When this struct is dropped, the stream will automatically be stopped
 /// and closed.
 ///
 /// Only one stream can exist at a time.
-pub struct Stream {
+pub struct StreamHandle {
     info: StreamInfo,
     raw: rtaudio_sys::rtaudio_t,
     started: bool,
@@ -50,7 +50,7 @@ pub struct Stream {
     cb_context: Pin<Box<CallbackContext>>,
 }
 
-impl Stream {
+impl StreamHandle {
     pub(crate) fn new<E>(
         mut host: Host,
         output_device: Option<DeviceParams>,
@@ -60,7 +60,7 @@ impl Stream {
         buffer_frames: u32,
         options: StreamOptions,
         error_callback: E,
-    ) -> Result<Stream, (Host, RtAudioError)>
+    ) -> Result<StreamHandle, (Host, RtAudioError)>
     where
         E: FnOnce(RtAudioError) + Send + 'static,
     {
@@ -112,7 +112,19 @@ impl Stream {
             };
 
         {
-            ERROR_CB_SINGLETON.lock().unwrap().cb = Some(Box::new(error_callback));
+            let mut cb_singleton = ERROR_CB_SINGLETON.lock().unwrap();
+
+            if cb_singleton.cb.is_some() {
+                return Err((
+                    host,
+                    RtAudioError {
+                        type_: RtAudioErrorType::InvalidUse,
+                        msg: Some("Only one RtAudio stream can exist at a time".into()),
+                    },
+                ));
+            }
+
+            cb_singleton.cb = Some(Box::new(error_callback));
         }
 
         let mut buffer_frames_res = buffer_frames as c_uint;
@@ -287,7 +299,7 @@ impl Stream {
     }
 }
 
-impl Drop for Stream {
+impl Drop for StreamHandle {
     fn drop(&mut self) {
         {
             ERROR_CB_SINGLETON.lock().unwrap().cb = None;

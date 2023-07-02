@@ -1,25 +1,13 @@
 fn main() {
     dbg!(rtaudio::version());
 
-    let compiled_apis = rtaudio::compiled_apis();
-    for api in compiled_apis {
-        dbg!(api);
-        dbg!(api.get_name());
+    for api in rtaudio::compiled_apis() {
         dbg!(api.get_display_name());
 
         match rtaudio::Host::new(api) {
             Ok(rt) => {
-                dbg!(rt.api());
-
-                for device_res in rt.iter_devices() {
-                    match device_res {
-                        Ok(device) => {
-                            dbg!(device);
-                        }
-                        Err(e) => {
-                            eprintln!("{}", e);
-                        }
-                    }
+                for device_info in rt.iter_devices() {
+                    dbg!(device_info);
                 }
             }
             Err(e) => {

@@ -1,5 +1,5 @@
 use crate::error::{RtAudioError, RtAudioErrorType};
-use crate::{Api, DeviceID, DeviceInfo, DeviceParams, SampleFormat, Stream, StreamOptions};
+use crate::{Api, DeviceID, DeviceInfo, DeviceParams, SampleFormat, StreamHandle, StreamOptions};
 use std::os::raw::{c_int, c_uint};
 
 /// An RtAudio Host instance. This is used to enumerate audio devices before
@@ -87,8 +87,9 @@ impl Host {
         Ok(DeviceInfo::from_raw(device_info_raw))
     }
 
-    /// Retrieve an iterator over the available audio devices.
-    pub fn iter_devices<'a>(&'a self) -> DeviceIter<'a> {
+    /// Retrieve an iterator over all the available audio devices (including ones
+    /// that have failed to scan properly).
+    pub fn iter_devices_complete<'a>(&'a self) -> DeviceIter<'a> {
         let num_devices = self.num_devices();
         DeviceIter {
             index: 0,
@@ -97,79 +98,105 @@ impl Host {
         }
     }
 
-    /// Retrieve a list of available audio devices.
-    pub fn devices(&self) -> Vec<DeviceInfo> {
-        self.iter_devices()
-            .filter_map(|d| match d {
-                Ok(d) => Some(d),
-                Err(e) => {
-                    log::warn!("{}", e);
+    /// Retrieve an iterator over the available audio devices.
+    ///
+    /// If there was a problem scanning a device, a warning will be printed
+    /// to the log.
+    pub fn iter_devices<'a>(&'a self) -> impl Iterator<Item = DeviceInfo> + 'a {
+        self.iter_devices_complete().filter_map(|d| match d {
+            Ok(d) => Some(d),
+            Err(e) => {
+                log::warn!("{}", e);
 
+                None
+            }
+        })
+    }
+
+    /// Retrieve an iterator over the available output audio devices.
+    ///
+    /// If there was a problem scanning a device, a warning will be printed
+    /// to the log.
+    pub fn iter_output_devices<'a>(&'a self) -> impl Iterator<Item = DeviceInfo> + 'a {
+        self.iter_devices_complete().filter_map(|d| match d {
+            Ok(d) => {
+                if d.output_channels > 0 {
+                    Some(d)
+                } else {
                     None
                 }
-            })
-            .collect()
+            }
+            Err(e) => {
+                log::warn!("{}", e);
+
+                None
+            }
+        })
+    }
+
+    /// Retrieve an iterator over the available input audio devices.
+    ///
+    /// If there was a problem scanning a device, a warning will be printed
+    /// to the log.
+    pub fn iter_input_devices<'a>(&'a self) -> impl Iterator<Item = DeviceInfo> + 'a {
+        self.iter_devices_complete().filter_map(|d| match d {
+            Ok(d) => {
+                if d.input_channels > 0 {
+                    Some(d)
+                } else {
+                    None
+                }
+            }
+            Err(e) => {
+                log::warn!("{}", e);
+
+                None
+            }
+        })
+    }
+
+    /// Retrieve an iterator over the available duplex audio devices.
+    ///
+    /// If there was a problem scanning a device, a warning will be printed
+    /// to the log.
+    pub fn iter_duplex_devices<'a>(&'a self) -> impl Iterator<Item = DeviceInfo> + 'a {
+        self.iter_devices_complete().filter_map(|d| match d {
+            Ok(d) => {
+                if d.duplex_channels > 0 {
+                    Some(d)
+                } else {
+                    None
+                }
+            }
+            Err(e) => {
+                log::warn!("{}", e);
+
+                None
+            }
+        })
+    }
+
+    /*
+    /// Retrieve a list of available audio devices.
+    pub fn devices(&self) -> Vec<DeviceInfo> {
+        self.iter_devices().collect()
     }
 
     /// Retrieve a list of available output audio devices.
     pub fn output_devices(&self) -> Vec<DeviceInfo> {
-        self.iter_devices()
-            .filter_map(|d| match d {
-                Ok(d) => {
-                    if d.output_channels > 0 {
-                        Some(d)
-                    } else {
-                        None
-                    }
-                }
-                Err(e) => {
-                    log::warn!("{}", e);
-
-                    None
-                }
-            })
-            .collect()
+        self.iter_output_devices().collect()
     }
 
     /// Retrieve a list of available input audio devices.
     pub fn input_devices(&self) -> Vec<DeviceInfo> {
-        self.iter_devices()
-            .filter_map(|d| match d {
-                Ok(d) => {
-                    if d.input_channels > 0 {
-                        Some(d)
-                    } else {
-                        None
-                    }
-                }
-                Err(e) => {
-                    log::warn!("{}", e);
-
-                    None
-                }
-            })
-            .collect()
+        self.iter_input_devices().collect()
     }
 
     /// Retrieve a list of available duplex audio devices.
     pub fn duplex_devices(&self) -> Vec<DeviceInfo> {
-        self.iter_devices()
-            .filter_map(|d| match d {
-                Ok(d) => {
-                    if d.duplex_channels > 0 {
-                        Some(d)
-                    } else {
-                        None
-                    }
-                }
-                Err(e) => {
-                    log::warn!("{}", e);
-
-                    None
-                }
-            })
-            .collect()
+        self.iter_duplex_devices().collect()
     }
+    */
 
     /// Returns the device ID (not index) of the default output device.
     pub fn default_output_device_id(&self) -> Option<DeviceID> {
@@ -238,7 +265,7 @@ impl Host {
     /// stream to close. If this happens, the returned `Stream` struct should be
     /// manually closed or dropped.
     ///
-    /// Only one stream can exist at a time.
+    /// Only one stream can be opened at a time (this is a limitation with RtAudio).
     pub fn open_stream<E>(
         self,
         output_device: Option<DeviceParams>,
@@ -248,11 +275,11 @@ impl Host {
         buffer_frames: u32,
         options: StreamOptions,
         error_callback: E,
-    ) -> Result<Stream, (Self, RtAudioError)>
+    ) -> Result<StreamHandle, (Self, RtAudioError)>
     where
         E: FnOnce(RtAudioError) + Send + 'static,
     {
-        Stream::new(
+        StreamHandle::new(
             self,
             output_device,
             input_device,

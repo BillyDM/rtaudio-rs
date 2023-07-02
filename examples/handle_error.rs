@@ -1,4 +1,7 @@
+//! Demonstrates how to handle stream errors.
+
 use rtaudio::{Api, Buffers, DeviceParams, SampleFormat, StreamInfo, StreamOptions, StreamStatus};
+use std::time::{Duration, Instant};
 
 fn main() {
     let host = rtaudio::Host::new(Api::Unspecified).unwrap();
@@ -6,7 +9,7 @@ fn main() {
 
     let (error_tx, error_rx) = std::sync::mpsc::channel();
 
-    let mut stream = host
+    let mut stream_handle = host
         .open_stream(
             Some(DeviceParams {
                 device_id: out_device.id,
@@ -22,33 +25,30 @@ fn main() {
         )
         .unwrap();
 
-    let mut phasor = 0.0;
-    let phasor_inc = 440.0 / stream.info().sample_rate as f32;
-
-    stream
+    stream_handle
         .start(
             move |buffers: Buffers<'_>, _info: &StreamInfo, _status: StreamStatus| {
                 if let Buffers::Float32 { output, input: _ } = buffers {
-                    let frames = output.len() / 2;
-
-                    for i in 0..frames {
-                        let val = (phasor * std::f32::consts::TAU).sin() * 0.5;
-
-                        // By default, buffers are interleaved.
-                        output[i * 2] = val;
-                        output[(i * 2) + 1] = val;
-
-                        phasor = (phasor + phasor_inc).fract();
-                    }
+                    // Fill the output with silence.
+                    output.fill(0.0);
                 }
             },
         )
         .unwrap();
 
-    if let Ok(error) = error_rx.recv_timeout(std::time::Duration::from_millis(5000)) {
-        // An error occured that caused the stream to close (for example a
-        // device was unplugged). Now our stream object should be manually
-        // closed or dropped.
-        eprintln!("{}", error);
+    // Play for 5 seconds and then close.
+    let t = Instant::now();
+    while t.elapsed() < Duration::from_secs(5) {
+        // Periodically poll to see if an error has happened.
+        if let Ok(error) = error_rx.try_recv() {
+            // An error occured that caused the stream to close (for example a
+            // device was unplugged). Now our stream_handle object should be
+            // manually closed or dropped.
+            eprintln!("{}", error);
+
+            break;
+        }
+
+        std::thread::sleep(Duration::from_millis(16));
     }
 }
