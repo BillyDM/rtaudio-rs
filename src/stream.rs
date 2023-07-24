@@ -348,7 +348,7 @@ pub(crate) unsafe extern "C" fn raw_data_callback(
     // Safe because we checked that this is not null. We have also
     // pinned this context in place, and it will always be valid for
     // the lifetime that this stream is open.
-    let mut cb_context = unsafe { &mut *cb_context_ptr };
+    let cb_context = unsafe { &mut *cb_context_ptr };
 
     cb_context.info.stream_time = stream_time;
 

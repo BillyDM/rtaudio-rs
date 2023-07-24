@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/rtaudio.svg)](https://crates.io/crates/rtaudio)
 [![License](https://img.shields.io/crates/l/rtaudio.svg)](https://github.com/BillyDM/rtaudio-rs/blob/main/LICENSE)
 
-Safe Rust wrapper and bindings for [RtAudio](https://github.com/thestk/rtaudio).
+Safe Rust wrapper and bindings for [RtAudio](https://github.com/thestk/rtaudio) (release 6.0.0).
 
 # Usage Example
 
@@ -96,14 +96,14 @@ Download at https://cmake.org/.
 By default, Jack on Linux and ASIO on Windows is disabled. You can enable them with the `jack_linux` and `asio` features.
 
 ```
-rtaudio-sys = { version = "0.1", features = ["jack_linux", "asio"] }
+rtaudio-rs = { version = "0.3.1", features = ["jack_linux", "asio"] }
 ```
 
 # Notes
 
 Bindings were made from the official [C header](https://github.com/thestk/rtaudio/blob/master/rtaudio_c.h). No bindings to the C++ interface are provided.
 
-This currently builds a static library from source on all platforms. Once RtAudio version 6 stabilizes I might have it link to the dynamic RtAudio library on Linux.
+This currently builds a static library from source on all platforms. Once RtAudio version 6 is commonly available in Linux package managers I might change it link to the dynamic library on Linux.
 
 I haven't figured out how to get Jack on MacOS to work yet. If you know how to install and link the Jack libraries on MacOS, please let me know.
 
