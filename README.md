@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/rtaudio.svg)](https://crates.io/crates/rtaudio)
 [![License](https://img.shields.io/crates/l/rtaudio.svg)](https://github.com/BillyDM/rtaudio-rs/blob/main/LICENSE)
 
-Safe Rust wrapper and bindings for [RtAudio](https://github.com/thestk/rtaudio) (release 6.0.0).
+Safe Rust wrapper and bindings for [RtAudio](https://github.com/thestk/rtaudio) (version 6).
 
 # Usage Example
 
@@ -96,7 +96,7 @@ Download at https://cmake.org/.
 By default, Jack on Linux and ASIO on Windows is disabled. You can enable them with the `jack_linux` and `asio` features.
 
 ```
-rtaudio = { version = "0.3.1", features = ["jack_linux", "asio"] }
+rtaudio = { version = "0.3.2", features = ["jack_linux", "asio"] }
 ```
 
 # Notes
